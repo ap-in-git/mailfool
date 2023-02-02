@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/ap-in-git/mailfool/api"
+	"github.com/ap-in-git/mailfool/mailer"
 	"github.com/joho/godotenv"
 	"net"
 	"strconv"
@@ -17,7 +18,9 @@ func main() {
 		panic("Error loading .env files")
 	}
 	go api.InitializeApiRoutes()
-	listenMail()
+	mailer.ListenMailConnection()
+	//http.StatusOK
+	//listenMail()
 
 }
 
