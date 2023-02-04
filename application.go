@@ -55,7 +55,6 @@ func listenMail() {
 
 		for {
 			for scanner.Scan() {
-				println(scanner.Text() + "===><ASd")
 				handleScan(scanner.Text(), writer)
 				writer.Flush()
 				// Handle the textual version of the message

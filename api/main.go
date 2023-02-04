@@ -8,6 +8,7 @@ import (
 
 func InitializeApiRoutes() {
 	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
 	err := r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
 		panic(err)

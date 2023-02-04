@@ -8,12 +8,11 @@ import (
 )
 
 func testMail(c *gin.Context) {
-	println("Mail sent")
 	from := "username:"
 	password := "password"
 
 	//toEmailAddress := "<paste the email address you want to send to>"
-	to := []string{"ashokpoudel023@gmail.com"}
+	to := []string{"bye@apinweb.com", "hi@apinweb.com"}
 
 	host := "127.0.0.1"
 	port := "2525"

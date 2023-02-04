@@ -26,6 +26,13 @@ func ListenMailConnection() {
 
 }
 
+type TempAuthService struct {
+}
+
+func (s TempAuthService) IsValidLogin(authCredentials string) bool {
+	return true
+}
+
 func acceptIncomingConnection(ln net.Listener) {
 	conn, err := ln.Accept()
 	if err != nil {
@@ -35,14 +42,13 @@ func acceptIncomingConnection(ln net.Listener) {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	scanner := bufio.NewScanner(reader)
-
 	sc := &Connection{
-		conn:    conn,
-		reader:  reader,
-		writer:  writer,
-		scanner: scanner,
+		conn:        conn,
+		reader:      reader,
+		writer:      writer,
+		scanner:     scanner,
+		authService: TempAuthService{},
 	}
 	sc.Serve()
-	//sc.writer
 
 }
