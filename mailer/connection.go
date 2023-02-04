@@ -66,7 +66,6 @@ func (c *Connection) handleResponse(line string) {
 		c.reply(502, "Command needs to be at least two words")
 		return
 	}
-	println(line)
 	switch sp[0] {
 	case "EHLO":
 		c.handleExtendedHello(sp)

@@ -166,7 +166,7 @@ func TestConnection_TestRCPT(t *testing.T) {
 		},
 		{
 			commands:         []string{"RCPT", "FROM:34"},
-			expectedResponse: "502 250 Go ahead\r\n",
+			expectedResponse: "250 Go ahead\r\n",
 			envelope:         &envelope,
 		},
 		//{
