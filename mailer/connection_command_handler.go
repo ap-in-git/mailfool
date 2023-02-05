@@ -14,6 +14,8 @@ func (c *Connection) handleExtendedHello(sp []string) {
 	c.writeWithDash(250, "SIZE "+strconv.Itoa(size))
 
 	if c.config.TLSConfig != nil && c.TLS == nil {
+		c.writeWithDash(250, "PIPELINING")
+
 		c.reply(250, "STARTTLS")
 		return
 	}
@@ -95,4 +97,9 @@ func parseAddress(input string, inputType string) (string, error) {
 	}
 	//println(input)
 	return address.Address, nil
+}
+
+func (c *Connection) handleQUIT() {
+	c.reply(221, "OK, bye")
+	c.close()
 }

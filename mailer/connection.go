@@ -2,9 +2,12 @@ package mailer
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/tls"
+	"io"
 	"log"
 	"net"
+	"net/textproto"
 	"strconv"
 	"strings"
 	"time"
@@ -14,14 +17,15 @@ type Config struct {
 	TLSConfig *tls.Config
 }
 type Connection struct {
-	reader      *bufio.Reader
-	writer      *bufio.Writer
-	scanner     *bufio.Scanner
-	conn        net.Conn
-	authService AuthService
-	Envelope    *Envelope
-	config      Config
-	TLS         *tls.ConnectionState
+	reader               *bufio.Reader
+	writer               *bufio.Writer
+	scanner              *bufio.Scanner
+	conn                 net.Conn
+	authService          AuthService
+	HandleDataConnection bool
+	Envelope             *Envelope
+	config               Config
+	TLS                  *tls.ConnectionState
 }
 
 func (c *Connection) writeSmtpMessage(statusCode int, message string) {
@@ -52,21 +56,20 @@ func (c *Connection) reply(statusCode int, message string) {
 
 func (c *Connection) Serve() {
 	c.sendWelcomeResponse()
-}
-
-func (c *Connection) sendWelcomeResponse() {
-	c.reply(220, "SMTP Ready")
-
 	for {
 		for c.scanner.Scan() {
 			c.handleResponse(c.scanner.Text())
 		}
+		break
 	}
+}
+
+func (c *Connection) sendWelcomeResponse() {
+	c.reply(220, "SMTP Ready")
 }
 
 func (c *Connection) handleResponse(line string) {
 	sp := strings.Fields(line)
-	println(line)
 	switch sp[0] {
 	case "EHLO":
 		c.handleExtendedHello(sp)
@@ -80,6 +83,8 @@ func (c *Connection) handleResponse(line string) {
 		c.handleSTARTTLS(sp)
 	case "DATA":
 		c.handleData(sp)
+	case "QUIT":
+		c.handleQUIT()
 	default:
 		c.reply(502, "Invalid command")
 
@@ -91,7 +96,22 @@ func (c *Connection) handleData(sp []string) {
 		c.reply(502, "Missing MAIL RCPT commands.")
 		return
 	}
-	c.reply(354, "Go ahead. End your data with <CR><LF>.<CR><LF>")
+	c.reply(354, "Go ahead. End your data with <CRLF>.<CRLF>")
+
+	data := &bytes.Buffer{}
+	reader := textproto.NewReader(c.reader).DotReader()
+
+	_, err := io.CopyN(data, reader, int64(102400))
+
+	if err == io.EOF {
+		c.Envelope.Data = data.Bytes()
+		c.reply(250, "Thank you.")
+		c.reset()
+		return
+	}
+	if err != nil {
+		return
+	}
 }
 
 func (c *Connection) handleSTARTTLS(sp []string) {
@@ -139,4 +159,12 @@ func (c *Connection) reset() {
 
 func (c *Connection) flush() {
 	c.writer.Flush()
+}
+
+func (c *Connection) close() {
+	c.writer.Flush()
+	time.Sleep(200 * time.Millisecond)
+	if c.conn != nil {
+		c.conn.Close()
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"net"
 	"testing"
 )
 
@@ -16,9 +17,7 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 		reader: reader,
 	}
 	host := "localhost"
-
 	c.handleExtendedHello([]string{"EHLO", host})
-
 	expected := "250-localhost\r\n250-SIZE 20971520\r\n250 AUTH LOGIN PLAIN CRA-MD5\r\n"
 	if b.String() != expected {
 		t.Fatalf("Got %v Want %v", b.String(), expected)
@@ -168,4 +167,21 @@ func TestConnection_TestRCPT(t *testing.T) {
 		}
 		b.Reset()
 	}
+}
+func TestConnection_TestHandleQuit(t *testing.T) {
+	_, client := net.Pipe()
+	var b bytes.Buffer
+	writer := bufio.NewWriter(&b)
+	reader := bufio.NewReader(&b)
+	c := Connection{
+		writer: writer,
+		reader: reader,
+		conn:   client,
+	}
+	c.handleQUIT()
+	expectedString := "221 OK, bye\r\n"
+	if b.String() != expectedString {
+		t.Fatalf("Got %v want %v", b.String(), expectedString)
+	}
+
 }

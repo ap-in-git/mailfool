@@ -20,11 +20,9 @@ func ListenMailConnection() {
 	}
 	fmt.Printf("Listening on host %s and port %s\n", host, port)
 	host, port, err = net.SplitHostPort(ln.Addr().String())
-	defer ln.Close()
 
 	for {
 		acceptIncomingConnection(ln)
-		//conn, err := ln.Accept()
 	}
 
 }
@@ -52,7 +50,7 @@ func acceptIncomingConnection(ln net.Listener) {
 	writer := bufio.NewWriter(conn)
 	scanner := bufio.NewScanner(reader)
 	if err != nil {
-		log.Println(err)
+		log.Println(err.Error() + "-->")
 		return
 	}
 
@@ -69,7 +67,7 @@ func acceptIncomingConnection(ln net.Listener) {
 			TLSConfig: &cfg,
 		},
 	}
-	sc.Serve()
+	go sc.Serve()
 
 }
 
