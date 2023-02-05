@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"github.com/ap-in-git/mailfool/config"
 	"io"
 	"log"
 	"net"
@@ -13,19 +14,15 @@ import (
 	"time"
 )
 
-type Config struct {
-	TLSConfig *tls.Config
-}
 type Connection struct {
-	reader               *bufio.Reader
-	writer               *bufio.Writer
-	scanner              *bufio.Scanner
-	conn                 net.Conn
-	authService          AuthService
-	HandleDataConnection bool
-	Envelope             *Envelope
-	config               Config
-	TLS                  *tls.ConnectionState
+	reader      *bufio.Reader
+	writer      *bufio.Writer
+	scanner     *bufio.Scanner
+	conn        net.Conn
+	authService AuthService
+	Envelope    *Envelope
+	TLS         *tls.ConnectionState
+	config      *config.MailConfig
 }
 
 func (c *Connection) writeSmtpMessage(statusCode int, message string) {
@@ -101,7 +98,7 @@ func (c *Connection) handleData(sp []string) {
 	data := &bytes.Buffer{}
 	reader := textproto.NewReader(c.reader).DotReader()
 
-	_, err := io.CopyN(data, reader, int64(102400))
+	_, err := io.CopyN(data, reader, c.config.MaxMessageSize)
 
 	if err == io.EOF {
 		c.Envelope.Data = data.Bytes()

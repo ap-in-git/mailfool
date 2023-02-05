@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"github.com/ap-in-git/mailfool/config"
 	"net"
 	"testing"
 )
@@ -12,9 +13,13 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
 	reader := bufio.NewReader(&b)
+	cfg := config.MailConfig{
+		MaxMessageSize: 20 * 1024 * 1024,
+	}
 	c := Connection{
 		writer: writer,
 		reader: reader,
+		config: &cfg,
 	}
 	host := "localhost"
 	c.handleExtendedHello([]string{"EHLO", host})

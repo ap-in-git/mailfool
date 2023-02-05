@@ -1,0 +1,5 @@
+[mail]
+    host = "127.0.0.1"
+    port = "2525"
+    tls  = true
+    MaxMessageSize = 102400

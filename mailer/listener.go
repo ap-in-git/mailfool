@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"github.com/ap-in-git/mailfool/config"
 	"log"
 	"net"
 	"path/filepath"
 	"runtime"
 )
 
-func ListenMailConnection() {
-	host := "127.0.0.1"
-	port := "2525"
+func ListenMailConnection(mailConfig config.MailConfig) {
+	host := mailConfig.Host
+	port := mailConfig.Port
 	networkUrl := host + ":" + port
 	ln, err := net.Listen("tcp", networkUrl)
 	if err != nil {
@@ -20,9 +21,17 @@ func ListenMailConnection() {
 	}
 	fmt.Printf("Listening on host %s and port %s\n", host, port)
 	host, port, err = net.SplitHostPort(ln.Addr().String())
-
+	if mailConfig.Tls {
+		cer, err := generateTlsCertificate()
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		tlsConfig := tls.Config{Certificates: []tls.Certificate{cer}}
+		mailConfig.TLSConfig = &tlsConfig
+	}
 	for {
-		acceptIncomingConnection(ln)
+		acceptIncomingConnection(ln, mailConfig)
 	}
 
 }
@@ -34,39 +43,30 @@ func (s TempAuthService) IsValidLogin(authCredentials string) bool {
 	return true
 }
 
-func acceptIncomingConnection(ln net.Listener) {
+func acceptIncomingConnection(ln net.Listener, mailConfig config.MailConfig) {
 	conn, err := ln.Accept()
 	if err != nil {
 		log.Fatalf(err.Error())
-	}
-
-	cer, err := generateTlsCertificate()
-	if err != nil {
-		log.Fatal(err)
-		return
 	}
 
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	scanner := bufio.NewScanner(reader)
 	if err != nil {
-		log.Println(err.Error() + "-->")
+		log.Println(err.Error())
 		return
 	}
 
-	cfg := tls.Config{
-		Certificates: []tls.Certificate{cer},
-	}
 	sc := &Connection{
 		conn:        conn,
 		reader:      reader,
 		writer:      writer,
 		scanner:     scanner,
 		authService: TempAuthService{},
-		config: Config{
-			TLSConfig: &cfg,
-		},
+		config:      &mailConfig,
 	}
+
+	sc.config = &mailConfig
 	go sc.Serve()
 
 }

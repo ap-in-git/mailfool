@@ -9,10 +9,9 @@ import (
 )
 
 func (c *Connection) handleExtendedHello(sp []string) {
-	size := 20 * 1024 * 1024 // 20 MB
+	size := c.config.MaxMessageSize
 	c.writeWithDash(250, sp[1])
-	c.writeWithDash(250, "SIZE "+strconv.Itoa(size))
-
+	c.writeWithDash(250, "SIZE "+strconv.Itoa(int(size)))
 	if c.config.TLSConfig != nil && c.TLS == nil {
 		c.writeWithDash(250, "PIPELINING")
 
