@@ -48,6 +48,7 @@ func acceptIncomingConnection(ln net.Listener) {
 		writer:      writer,
 		scanner:     scanner,
 		authService: TempAuthService{},
+		config:      Config{},
 	}
 	sc.Serve()
 

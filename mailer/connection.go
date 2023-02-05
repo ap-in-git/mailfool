@@ -2,12 +2,16 @@ package mailer
 
 import (
 	"bufio"
+	"crypto/tls"
 	"log"
 	"net"
 	"strconv"
 	"strings"
 )
 
+type Config struct {
+	TLSConfig *tls.Config
+}
 type Connection struct {
 	reader      *bufio.Reader
 	writer      *bufio.Writer
@@ -15,6 +19,7 @@ type Connection struct {
 	conn        net.Conn
 	authService AuthService
 	Envelope    *Envelope
+	config      Config
 }
 
 func (c *Connection) writeSmtpMessage(statusCode int, message string) {
@@ -59,13 +64,6 @@ func (c *Connection) sendWelcomeResponse() {
 
 func (c *Connection) handleResponse(line string) {
 	sp := strings.Fields(line)
-
-	//SMTP message should have at least two words.
-	//One with smtp command and remaining being value needed to be processed
-	if len(sp) < 2 {
-		c.reply(502, "Command needs to be at least two words")
-		return
-	}
 	switch sp[0] {
 	case "EHLO":
 		c.handleExtendedHello(sp)
@@ -75,8 +73,18 @@ func (c *Connection) handleResponse(line string) {
 		c.handleMail(sp)
 	case "RCPT":
 		c.handleRCPT(sp)
+	case "DATA":
+		c.handleData(sp)
 	default:
 		c.reply(502, "Invalid command")
 
 	}
+}
+
+func (c *Connection) handleData(sp []string) {
+	if c.Envelope == nil || len(c.Envelope.Recipients) == 0 {
+		c.reply(502, "Missing MAIL RCPT commands.")
+		return
+	}
+	c.reply(354, "Go ahead. End your data with <CR><LF>.<CR><LF>")
 }

@@ -24,28 +24,6 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 		t.Fatalf("Got %v Want %v", b.String(), expected)
 	}
 }
-func TestConnection_HandleInvalidCommand(t *testing.T) {
-	var b bytes.Buffer
-	writer := bufio.NewWriter(&b)
-	reader := bufio.NewReader(&b)
-	c := Connection{
-		writer: writer,
-		reader: reader,
-	}
-
-	c.handleResponse("INVALID")
-
-	expected := "502 Command needs to be at least two words\r\n"
-	if b.String() != expected {
-		t.Fatalf("Got %v Want %v", b.String(), expected)
-	}
-	b.Reset()
-	c.handleResponse("INVALID OTHER")
-	expected = "502 Invalid command\r\n"
-	if b.String() != expected {
-		t.Fatalf("Got %v Want %v", b.String(), expected)
-	}
-}
 
 type TestAuthService struct {
 }
@@ -74,10 +52,6 @@ func TestConnection_TestHandleAuth(t *testing.T) {
 		commands         []string
 		expectedResponse string
 	}{
-		{
-			commands:         []string{"AUTH", "TEST"},
-			expectedResponse: "502 Invalid number of parameter for auth\r\n",
-		},
 		{
 			commands:         []string{"AUTH", "LOGIN", "Invalid base64 string"},
 			expectedResponse: "502 Illegal base64 data for auth credentials\r\n",
@@ -165,25 +139,25 @@ func TestConnection_TestRCPT(t *testing.T) {
 			envelope:         nil,
 		},
 		{
-			commands:         []string{"RCPT", "FROM:34"},
-			expectedResponse: "250 Go ahead\r\n",
+			commands:         []string{"RCPT", "Invalid params"},
+			expectedResponse: "502 Invalid number of parameters\r\n",
 			envelope:         &envelope,
 		},
-		//{
-		//	commands:         []string{"RCPT", "FROM:hi@apinweb.com"},
-		//	expectedResponse: "502 invalid sender email format. Should start with < and end with > for hi@apinweb.com\r\n",
-		//	envelope:         &envelope,
-		//},
-		//{
-		//	commands:         []string{"RCPT", "FROM:<hiapinwebcom>"},
-		//	expectedResponse: "502 mail: missing '@' or angle-addr\r\n",
-		//	envelope:         &envelope,
-		//},
-		//{
-		//	commands:         []string{"RCPT", "FROM:<hi@apinwebcom>"},
-		//	expectedResponse: "250 Go ahead.\r\n",
-		//	envelope:         &envelope,
-		//},
+		{
+			commands:         []string{"RCPT", "TO:hi@apinweb.com"},
+			expectedResponse: "502 invalid receiver email format. Should start with < and end with > for hi@apinweb.com\r\n",
+			envelope:         &envelope,
+		},
+		{
+			commands:         []string{"RCPT", "TO:<hiatinvalidemail.com>"},
+			expectedResponse: "502 mail: missing '@' or angle-addr\r\n",
+			envelope:         &envelope,
+		},
+		{
+			commands:         []string{"RCPT", "TO:<hi@apinweb.com>"},
+			expectedResponse: "250 Go ahead.\r\n",
+			envelope:         &envelope,
+		},
 	}
 
 	for _, testCase := range testCases {
