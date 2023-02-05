@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -20,6 +21,7 @@ type Connection struct {
 	authService AuthService
 	Envelope    *Envelope
 	config      Config
+	TLS         *tls.ConnectionState
 }
 
 func (c *Connection) writeSmtpMessage(statusCode int, message string) {
@@ -64,6 +66,7 @@ func (c *Connection) sendWelcomeResponse() {
 
 func (c *Connection) handleResponse(line string) {
 	sp := strings.Fields(line)
+	println(line)
 	switch sp[0] {
 	case "EHLO":
 		c.handleExtendedHello(sp)
@@ -73,6 +76,8 @@ func (c *Connection) handleResponse(line string) {
 		c.handleMail(sp)
 	case "RCPT":
 		c.handleRCPT(sp)
+	case "STARTTLS":
+		c.handleSTARTTLS(sp)
 	case "DATA":
 		c.handleData(sp)
 	default:
@@ -87,4 +92,51 @@ func (c *Connection) handleData(sp []string) {
 		return
 	}
 	c.reply(354, "Go ahead. End your data with <CR><LF>.<CR><LF>")
+}
+
+func (c *Connection) handleSTARTTLS(sp []string) {
+
+	if c.TLS != nil {
+		c.reply(502, "Already running on TLS")
+		return
+	}
+
+	if c.config.TLSConfig == nil {
+		c.reply(502, "Tls not supported")
+		return
+	}
+	c.reply(220, "Go ahead")
+	tlsConn := tls.Server(c.conn, c.config.TLSConfig)
+
+	// Perform a handshake
+	if err := tlsConn.Handshake(); err != nil {
+		c.reply(550, "Handshake error")
+		return
+	}
+
+	// Reset envelope, new EHLO/HELO is required after STARTTLS
+	c.reset()
+
+	// Reset deadlines on the old connection - zero it out
+	c.conn.SetDeadline(time.Time{})
+
+	// Replace connection with a TLS connection
+	c.conn = tlsConn
+	c.reader = bufio.NewReader(c.conn)
+	c.writer = bufio.NewWriter(c.conn)
+	c.scanner = bufio.NewScanner(c.reader)
+
+	state := tlsConn.ConnectionState()
+	c.TLS = &state
+
+	// Flush the connection to set up new timeout deadlines
+	c.flush()
+}
+
+func (c *Connection) reset() {
+	c.Envelope = nil
+}
+
+func (c *Connection) flush() {
+	c.writer.Flush()
 }

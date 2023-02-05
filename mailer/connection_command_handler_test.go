@@ -19,16 +19,16 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 
 	c.handleExtendedHello([]string{"EHLO", host})
 
-	expected := "250-localhost\r\n250-SIZE 20971520\r\n250 AUTH LOGIN\r\n"
+	expected := "250-localhost\r\n250-SIZE 20971520\r\n250 AUTH LOGIN PLAIN CRA-MD5\r\n"
 	if b.String() != expected {
 		t.Fatalf("Got %v Want %v", b.String(), expected)
 	}
 }
 
-type TestAuthService struct {
+type FakerService struct {
 }
 
-func (s TestAuthService) IsValidLogin(authDetails string) bool {
+func (s FakerService) IsValidLogin(authDetails string) bool {
 	return authDetails == "user:password"
 }
 
@@ -39,7 +39,7 @@ func TestConnection_TestHandleAuth(t *testing.T) {
 	c := Connection{
 		writer:      writer,
 		reader:      reader,
-		authService: TestAuthService{},
+		authService: FakerService{},
 	}
 	username := "user"
 	password := "password"

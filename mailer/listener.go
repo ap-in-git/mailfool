@@ -2,9 +2,12 @@ package mailer
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
+	"path/filepath"
+	"runtime"
 )
 
 func ListenMailConnection() {
@@ -39,17 +42,42 @@ func acceptIncomingConnection(ln net.Listener) {
 		log.Fatalf(err.Error())
 	}
 
+	cer, err := generateTlsCertificate()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	scanner := bufio.NewScanner(reader)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	cfg := tls.Config{
+		Certificates: []tls.Certificate{cer},
+	}
 	sc := &Connection{
 		conn:        conn,
 		reader:      reader,
 		writer:      writer,
 		scanner:     scanner,
 		authService: TempAuthService{},
-		config:      Config{},
+		config: Config{
+			TLSConfig: &cfg,
+		},
 	}
 	sc.Serve()
 
+}
+
+func generateTlsCertificate() (tls.Certificate, error) {
+	_, b, _, _ := runtime.Caller(0)
+	basePath := filepath.Dir(b)
+	certKeyFileLocation := basePath + "/../certs/server.rsa.crt"
+	certKeyLocation := basePath + "/../certs/server.rsa.key"
+	cer, err := tls.LoadX509KeyPair(certKeyFileLocation, certKeyLocation)
+	return cer, err
 }

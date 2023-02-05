@@ -13,11 +13,11 @@ func (c *Connection) handleExtendedHello(sp []string) {
 	c.writeWithDash(250, sp[1])
 	c.writeWithDash(250, "SIZE "+strconv.Itoa(size))
 
-	if c.config.TLSConfig != nil {
+	if c.config.TLSConfig != nil && c.TLS == nil {
 		c.reply(250, "STARTTLS")
 		return
 	}
-	c.reply(250, "AUTH LOGIN")
+	c.reply(250, "AUTH LOGIN PLAIN CRA-MD5")
 	return
 }
 
