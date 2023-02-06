@@ -5,13 +5,14 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/ap-in-git/mailfool/config"
+	"github.com/ap-in-git/mailfool/service"
 	"log"
 	"net"
 	"path/filepath"
 	"runtime"
 )
 
-func ListenMailConnection(mailConfig config.MailConfig) {
+func ListenMailConnection(mailConfig config.MailConfig, service *service.MailBoxService, messageService *service.MailMessageService) {
 	host := mailConfig.Host
 	port := mailConfig.Port
 	networkUrl := host + ":" + port
@@ -31,7 +32,7 @@ func ListenMailConnection(mailConfig config.MailConfig) {
 		mailConfig.TLSConfig = &tlsConfig
 	}
 	for {
-		acceptIncomingConnection(ln, mailConfig)
+		acceptIncomingConnection(ln, mailConfig, service, messageService)
 	}
 
 }
@@ -43,7 +44,7 @@ func (s TempAuthService) IsValidLogin(authCredentials string) bool {
 	return true
 }
 
-func acceptIncomingConnection(ln net.Listener, mailConfig config.MailConfig) {
+func acceptIncomingConnection(ln net.Listener, mailConfig config.MailConfig, service *service.MailBoxService, messageService *service.MailMessageService) {
 	conn, err := ln.Accept()
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -58,12 +59,13 @@ func acceptIncomingConnection(ln net.Listener, mailConfig config.MailConfig) {
 	}
 
 	sc := &Connection{
-		conn:        conn,
-		reader:      reader,
-		writer:      writer,
-		scanner:     scanner,
-		authService: TempAuthService{},
-		config:      &mailConfig,
+		conn:            conn,
+		reader:          reader,
+		writer:          writer,
+		scanner:         scanner,
+		authService:     service,
+		envelopeHandler: messageService,
+		config:          &mailConfig,
 	}
 
 	sc.config = &mailConfig

@@ -1,14 +1,14 @@
 package models
 
 import (
-	"gorm.io/datatypes"
 	"time"
 )
 
 type MailMessage struct {
 	Model
-	ReadAt     *time.Time     `json:"read_at,omitempty" gorm:"type:datetime"`
-	Sender     string         `json:"sender"`
-	Receiver   datatypes.JSON `json:"receiver"`
-	RawMessage string         `json:"message"`
+	ReadAt     *time.Time `json:"read_at,omitempty" gorm:"type:datetime"`
+	Sender     string     `json:"sender" gorm:"type:varchar(255)"`
+	Receiver   string     `json:"receiver" gorm:"type:varchar(255)"`
+	RawMessage string     `json:"message"`
+	MailBoxId  uint       `json:"mail_box_id"`
 }

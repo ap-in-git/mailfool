@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	gomail "gopkg.in/mail.v2"
+	"net/http"
 )
 
 func testMail(c *gin.Context) {
@@ -24,7 +25,7 @@ func testMail(c *gin.Context) {
 	m.SetBody("text/plain", "This is Gomail test body")
 
 	// Settings for SMTP server
-	d := gomail.NewDialer("127.0.0.1", 2525, "username", "password")
+	d := gomail.NewDialer("127.0.0.1", 2525, "username", ":password")
 
 	// This is only needed when SSL/TLS certificate is not valid on server.
 	// In production this should be set to false.
@@ -35,6 +36,9 @@ func testMail(c *gin.Context) {
 		fmt.Println(err)
 		panic(err)
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "works",
+	})
 
 	//from := "username:"
 	//password := "password"

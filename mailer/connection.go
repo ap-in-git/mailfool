@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"github.com/ap-in-git/mailfool/config"
+	"github.com/ap-in-git/mailfool/db/models"
+	"github.com/ap-in-git/mailfool/mailer/envelope"
 	"io"
 	"log"
 	"net"
@@ -15,14 +18,16 @@ import (
 )
 
 type Connection struct {
-	reader      *bufio.Reader
-	writer      *bufio.Writer
-	scanner     *bufio.Scanner
-	conn        net.Conn
-	authService AuthService
-	Envelope    *Envelope
-	TLS         *tls.ConnectionState
-	config      *config.MailConfig
+	reader          *bufio.Reader
+	writer          *bufio.Writer
+	scanner         *bufio.Scanner
+	conn            net.Conn
+	authService     AuthHandler
+	Envelope        *envelope.Envelope
+	TLS             *tls.ConnectionState
+	config          *config.MailConfig
+	envelopeHandler EnvelopeHandler
+	MailBox         *models.MailBox
 }
 
 func (c *Connection) writeSmtpMessage(statusCode int, message string) {
@@ -57,7 +62,6 @@ func (c *Connection) Serve() {
 		for c.scanner.Scan() {
 			c.handleResponse(c.scanner.Text())
 		}
-		break
 	}
 }
 
@@ -82,6 +86,7 @@ func (c *Connection) handleResponse(line string) {
 		c.handleData(sp)
 	case "QUIT":
 		c.handleQUIT()
+
 	default:
 		c.reply(502, "Invalid command")
 
@@ -102,6 +107,12 @@ func (c *Connection) handleData(sp []string) {
 
 	if err == io.EOF {
 		c.Envelope.Data = data.Bytes()
+		err := c.envelopeHandler.StoreEnvelope(c.Envelope)
+		if err != nil {
+			fmt.Println(err.Error())
+			c.reply(502, "Something went wrong while storing data")
+			return
+		}
 		c.reply(250, "Thank you.")
 		c.reset()
 		return

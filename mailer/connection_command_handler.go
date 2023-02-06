@@ -3,6 +3,7 @@ package mailer
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/ap-in-git/mailfool/mailer/envelope"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -33,10 +34,17 @@ func (c *Connection) handleAuth(cmd []string) {
 		return
 	}
 	authString := string(authDecoded)
-	if !c.authService.IsValidLogin(authString) {
+	spt := strings.Split(authString, ":")
+	if len(spt) == 1 {
+		c.reply(502, "Username and password should be separated by :")
+		return
+	}
+	mailBox := c.authService.IsValidLogin(authString)
+	if mailBox == nil {
 		c.reply(535, "Authentication failed")
 		return
 	}
+	c.MailBox = mailBox
 	c.reply(235, "2.7.0 Authentication successful")
 	return
 
@@ -53,11 +61,12 @@ func (c *Connection) handleMail(cmd []string) {
 		c.reply(502, err.Error())
 		return
 	}
-	envelope := Envelope{
+	envelop := envelope.Envelope{
 		Sender:     address,
 		Recipients: []string{},
 	}
-	c.Envelope = &envelope
+	c.Envelope = &envelop
+	c.Envelope.MailBox = c.MailBox
 	c.reply(250, "Go ahead.")
 
 }

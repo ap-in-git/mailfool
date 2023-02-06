@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/ap-in-git/mailfool/config"
+	"github.com/ap-in-git/mailfool/db/models"
+	envelope2 "github.com/ap-in-git/mailfool/mailer/envelope"
 	"net"
 	"testing"
 )
@@ -32,8 +34,12 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 type FakerService struct {
 }
 
-func (s FakerService) IsValidLogin(authDetails string) bool {
-	return authDetails == "user:password"
+func (s FakerService) IsValidLogin(authDetails string) *models.MailBox {
+	st := models.MailBox{}
+	if authDetails == "user:password" {
+		return &st
+	}
+	return nil
 }
 
 func TestConnection_TestHandleAuth(t *testing.T) {
@@ -131,11 +137,11 @@ func TestConnection_TestRCPT(t *testing.T) {
 		reader: reader,
 	}
 
-	envelope := Envelope{Sender: "hi@apinweb.com", Recipients: []string{}}
+	envelope := envelope2.Envelope{Sender: "hi@apinweb.com", Recipients: []string{}}
 	testCases := []struct {
 		commands         []string
 		expectedResponse string
-		envelope         *Envelope
+		envelope         *envelope2.Envelope
 	}{
 		{
 			commands:         []string{"RCPT", "Envelope not set"},

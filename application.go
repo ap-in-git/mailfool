@@ -5,7 +5,10 @@ import (
 	"github.com/ap-in-git/mailfool/api"
 	"github.com/ap-in-git/mailfool/config"
 	"github.com/ap-in-git/mailfool/connection"
+	"github.com/ap-in-git/mailfool/db/models"
 	"github.com/ap-in-git/mailfool/mailer"
+	"github.com/ap-in-git/mailfool/service"
+	"gorm.io/gorm"
 	"log"
 	"os"
 )
@@ -13,9 +16,24 @@ import (
 func main() {
 	appConfig := getAppConfig()
 	go api.InitializeApiRoutes()
-	database, _ := connection.Init(&appConfig.Db)
+	database, gormDb := connection.Init(&appConfig.Db)
 	defer database.Close()
-	mailer.ListenMailConnection(appConfig.Mail)
+	//setupDefaultValues(gormDb)
+	mailBoxService := service.NewMailBoxService(gormDb)
+	mailMessageService := service.NewMailMessageService(gormDb)
+	mailer.ListenMailConnection(appConfig.Mail, mailBoxService, mailMessageService)
+}
+
+func setupDefaultValues(db *gorm.DB) {
+	t := models.MailBox{
+		Name:        "Test",
+		UserName:    "username",
+		Password:    "password",
+		TlsEnabled:  true,
+		MaximumSize: 10,
+	}
+	db.Create(&t)
+
 }
 
 func getAppConfig() config.AppConfig {
