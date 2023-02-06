@@ -2,12 +2,14 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 )
 
-func InitializeApiRoutes() {
+func InitializeApiRoutes(db *gorm.DB) {
 	//gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.Use(corsMiddleware())
 	err := r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
 		panic(err)
@@ -20,6 +22,8 @@ func InitializeApiRoutes() {
 		})
 	})
 	r.GET("/test", testMail)
+	initializeRoutes(r, db)
+
 	err = r.Run(":5000")
 	if err != nil {
 		panic(err)

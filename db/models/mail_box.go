@@ -14,7 +14,7 @@ type Model struct {
 type MailBox struct {
 	Model
 	Name        string `json:"name" gorm:"type:varchar(255)"`
-	UserName    string `json:"user_name" gorm:"type:varchar(255)"`
+	UserName    string `json:"user_name" gorm:"type:varchar(255);index:idx_name,unique"`
 	Password    string `json:"password" gorm:"type:varchar(255)"`
 	TlsEnabled  bool   `json:"tls_enabled"`
 	MaximumSize int8   `json:"maximum_size"`

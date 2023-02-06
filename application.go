@@ -8,6 +8,7 @@ import (
 	"github.com/ap-in-git/mailfool/db/models"
 	"github.com/ap-in-git/mailfool/mailer"
 	"github.com/ap-in-git/mailfool/service"
+	"github.com/jaswdr/faker"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -15,25 +16,28 @@ import (
 
 func main() {
 	appConfig := getAppConfig()
-	go api.InitializeApiRoutes()
-	database, gormDb := connection.Init(&appConfig.Db)
-	defer database.Close()
-	//setupDefaultValues(gormDb)
-	mailBoxService := service.NewMailBoxService(gormDb)
-	mailMessageService := service.NewMailMessageService(gormDb)
+	sqlDb, db := connection.Init(&appConfig.Db)
+	defer sqlDb.Close()
+	//setupDefaultddValues(db)
+	go api.InitializeApiRoutes(db)
+	mailBoxService := service.NewMailBoxService(db)
+	mailMessageService := service.NewMailMessageService(db)
 	mailer.ListenMailConnection(appConfig.Mail, mailBoxService, mailMessageService)
 }
 
 func setupDefaultValues(db *gorm.DB) {
-	t := models.MailBox{
-		Name:        "Test",
-		UserName:    "username",
-		Password:    "password",
-		TlsEnabled:  true,
-		MaximumSize: 10,
-	}
-	db.Create(&t)
 
+	fk := faker.New()
+	for i := 0; i < 12; i++ {
+		mbox := models.MailBox{
+			Name:        fk.Person().Name(),
+			UserName:    fk.Internet().User(),
+			Password:    "password",
+			MaximumSize: int8(i + 1),
+			TlsEnabled:  fk.Bool(),
+		}
+		db.Create(&mbox)
+	}
 }
 
 func getAppConfig() config.AppConfig {

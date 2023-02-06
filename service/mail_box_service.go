@@ -36,3 +36,9 @@ func (s *MailBoxService) IsValidLogin(authCredentials string) *models.MailBox {
 	}
 	return nil
 }
+
+func (s *MailBoxService) GetAllMailBox() []models.MailBox {
+	var boxes []models.MailBox
+	s.db.Order("name asc").Find(&boxes)
+	return boxes
+}
