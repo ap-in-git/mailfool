@@ -4,7 +4,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ap-in-git/mailfool/api"
 	"github.com/ap-in-git/mailfool/config"
-	"github.com/ap-in-git/mailfool/db"
+	"github.com/ap-in-git/mailfool/connection"
 	"github.com/ap-in-git/mailfool/mailer"
 	"log"
 	"os"
@@ -13,7 +13,7 @@ import (
 func main() {
 	appConfig := getAppConfig()
 	go api.InitializeApiRoutes()
-	database, _ := db.Init(&appConfig.Db)
+	database, _ := connection.Init(&appConfig.Db)
 	defer database.Close()
 	mailer.ListenMailConnection(appConfig.Mail)
 }

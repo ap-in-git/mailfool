@@ -1,9 +1,10 @@
-package db
+package connection
 
 import (
 	"database/sql"
 	"fmt"
 	"github.com/ap-in-git/mailfool/config"
+	"github.com/ap-in-git/mailfool/db/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -34,5 +35,9 @@ func Init(config *config.DbConfig) (*sql.DB, *gorm.DB) {
 		panic(err)
 	}
 
+	runMigrations(db)
 	return sqlDB, db
+}
+func runMigrations(db *gorm.DB) {
+	db.AutoMigrate(&models.MailBox{}, &models.MailMessage{})
 }

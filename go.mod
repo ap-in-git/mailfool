@@ -32,6 +32,7 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gorm.io/datatypes v1.1.0 // indirect
 	gorm.io/driver/mysql v1.4.5 // indirect
 	gorm.io/gorm v1.24.5 // indirect
 )
