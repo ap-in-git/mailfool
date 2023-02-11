@@ -2,6 +2,7 @@ import {RouteObject} from "react-router";
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import MailBox from "./pages/MailBox";
+import AppLayout from "./layouts/AppLayout";
 
 export const routes: RouteObject[] = [
 
@@ -14,8 +15,13 @@ export const routes: RouteObject[] = [
         element: <SignIn/>
     },
     {
-        path: "/mail-boxes",
-        element: <MailBox/>
-    }
+        element: <AppLayout/>,
+        children:[
+            {
+                path:"/mail-boxes",
+                element: <MailBox/>
+            }
 
+        ]
+    }
 ]
