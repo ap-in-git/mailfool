@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/ap-in-git/mailfool/db/models"
+	formRequest "github.com/ap-in-git/mailfool/form-request"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -16,7 +17,13 @@ func NewMailBoxService(db *gorm.DB) *MailBoxService {
 	return &service
 }
 
-func (s *MailBoxService) CreateMailBox(mailBox models.MailBox) error {
+func (s *MailBoxService) CreateMailBox(request formRequest.MailBoxFormRequest) error {
+	var mailBox models.MailBox
+	mailBox.Name = request.Name
+	mailBox.UserName = request.Username
+	mailBox.Password = request.Password
+	mailBox.TlsEnabled = request.TlsEnabled
+	mailBox.MaximumSize = request.MaxSize
 	err := s.db.Create(&mailBox).Error
 	return err
 }
@@ -39,6 +46,17 @@ func (s *MailBoxService) IsValidLogin(authCredentials string) *models.MailBox {
 
 func (s *MailBoxService) GetAllMailBox() []models.MailBox {
 	var boxes []models.MailBox
-	s.db.Order("name asc").Find(&boxes)
+	s.db.Order("name asc").Order("created_at desc").Find(&boxes)
 	return boxes
+}
+
+func (s *MailBoxService) CheckIfUsernameExist(userName string) bool {
+	var mailbox models.MailBox
+	s.db.Where("user_name = ?", userName).Take(&mailbox)
+	return mailbox.ID > 0
+}
+
+func (s *MailBoxService) DeleteMailbox(id int) error {
+	err := s.db.Delete(&models.MailBox{}, id).Error
+	return err
 }

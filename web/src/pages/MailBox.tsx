@@ -12,9 +12,11 @@ import {AiOutlineUser} from "react-icons/ai"
 import {RiLockPasswordLine} from "react-icons/ri"
 import {MdStorage,MdLock} from "react-icons/md"
 import CreateDialog from "../components/mail-box/CreateDialog";
+import useNotificationStore from "../store/notification";
 const MailBox = () => {
     const [mailBoxes, setMailBoxes] = useState<Mailbox[]>([]);
-    const [dialogOpen,setDialogOpen] = useState(true);
+    const [dialogOpen,setDialogOpen] = useState(false);
+    const {showSuccess,showError} = useNotificationStore((state) =>state)
     useEffect(() => {
         fetchMailbox().finally()
     }, []);
@@ -23,13 +25,27 @@ const MailBox = () => {
             setMailBoxes(res.data)
         })
     }
+
+    const deleteInbox = async (id: number) => {
+       if (confirm("Are you sure?"))  {
+           try {
+               const response =  await restApi.delete(("/mail-boxes/"+id))
+               showSuccess(response.data.message)
+               fetchMailbox().finally()
+           }catch (e:any) {
+               showError(e.response.data.message)
+           }
+
+       }
+    }
+
     return (
         <Grid container spacing={4}>
             <Grid item xs={12}>
                 <Button size={"small"} color={"primary"} onClick={()=>{
                     setDialogOpen(true)
                 }}>Add new inbox</Button>
-                <CreateDialog dialogOpen={dialogOpen} setDialogOpen={setDialogOpen}/>
+                <CreateDialog dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} fetchMailBox={fetchMailbox}/>
             </Grid>
             {
                 mailBoxes.map((mailBox) => {
@@ -77,6 +93,9 @@ const MailBox = () => {
                                 </CardContent>
                                 <CardActions>
                                     <Button size="small">View Inbox</Button>
+                                    <Button size="small" color={"error"} onClick={()=>{
+                                        deleteInbox(mailBox.id)
+                                    }}>Delete Inbox</Button>
                                 </CardActions>
                             </Card>
                         </Grid>

@@ -10,6 +10,8 @@ func initializeRoutes(r *gin.Engine, db *gorm.DB) {
 	mailBoxController := controller.NewMailBoxController(db)
 	authorized := r.Group("/api/v1/")
 	authorized.GET("/mail-boxes", mailBoxController.Index)
+	authorized.POST("/mail-boxes", mailBoxController.Store)
+	authorized.DELETE("/mail-boxes/:id", mailBoxController.Delete)
 
 }
 

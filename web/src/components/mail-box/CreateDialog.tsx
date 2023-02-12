@@ -1,20 +1,23 @@
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import React from 'react';
-import {DialogActions, DialogContent, Grid} from "@mui/material";
+import {Checkbox, DialogActions, DialogContent, FormControlLabel, Grid} from "@mui/material";
 import TextField from "@mui/material/TextField";
 import {useForm} from "react-hook-form";
 import {restApi} from "../../../api";
 import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
+import {Controller} from "react-hook-form";
+import useNotificationStore from "../../store/notification";
 
 interface Props {
     dialogOpen: boolean,
     setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
+    fetchMailBox: () => Promise<any>
 }
 
-const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
-    const {register, handleSubmit, formState: {errors}} = useForm<{
+const CreateDialog: React.FC<Props> = ({fetchMailBox,dialogOpen, setDialogOpen}) => {
+    const {showSuccess,showError} = useNotificationStore((state) =>state)
+    const {register,control, handleSubmit, formState: {errors}} = useForm<{
         name: string
         username: string
         password: string
@@ -22,8 +25,15 @@ const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
         tls_enabled: boolean
     }>();
 
-    const onSubmit = handleSubmit(data => {
-        restApi.post("/auth/login", data)
+    const onSubmit = handleSubmit(async data => {
+        try {
+            const response = await restApi.post("/mail-boxes", data)
+            showSuccess(response.data.message)
+            setDialogOpen(false)
+            fetchMailBox().finally()
+        }catch (e:any) {
+            showError(e.response.data.message)
+        }
     })
 
     return (
@@ -31,8 +41,8 @@ const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
             <form onSubmit={onSubmit}>
                 <DialogTitle id="form-dialog-title">Add new mailbox </DialogTitle>
                 <DialogContent>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
+                    <Grid container spacing={2} >
+                        <Grid item xs={12} style={{marginTop:10}}>
                             <TextField
                                 size="small"
                                 id="name"
@@ -55,7 +65,11 @@ const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
                                 type="text"
                                 fullWidth
                                 {...register("username", {
-                                    required: "Username is required"
+                                    required: "Username is required",
+                                    pattern: {
+                                        message:"Username can only contains number and alphabet",
+                                        value:/^[a-zA-Z\d]+$/
+                                    }
                                 })}
                                 helperText={errors.username && errors.username.message}
                                 error={!!errors.username}
@@ -69,8 +83,12 @@ const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
                                 label="Password * "
                                 type="text"
                                 fullWidth
-                                {...register("username", {
-                                    required: "Password is required"
+                                {...register("password", {
+                                    required: "Password is required",
+                                    pattern: {
+                                        message:"Password cannot contains :",
+                                        value:/^[^:]*$/
+                                    }
                                 })}
                                 helperText={errors.password && errors.password.message}
                                 error={!!errors.password}
@@ -85,17 +103,34 @@ const CreateDialog: React.FC<Props> = ({dialogOpen, setDialogOpen}) => {
                                 type="number"
                                 fullWidth
                                 {...register("max_size", {
-                                    required: "Maximum mail is required"
+                                    required: "Maximum mail size is required",
+                                    valueAsNumber:true
                                 })}
                                 helperText={errors.max_size && errors.max_size.message}
                                 error={!!errors.max_size}
                                 variant={"outlined"}
                             />
                         </Grid>
+                        <Grid item xs={12}>
+                            <FormControlLabel control={
+                                <Controller
+                                    name="tls_enabled"
+                                    control={control}
+                                    render={({ field: props }) => (
+                                        <Checkbox
+                                            {...props}
+                                            onChange={(e) => props.onChange(e.target.checked)}
+                                        />
+                                    )}
+                                />
+                            } label="TLS enabled" />
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions>
-                    <Button color={"error"} size={"small"}>Close</Button>
+                    <Button color={"error"} size={"small"} onClick={()=>{
+                        setDialogOpen(false)
+                    }}>Close</Button>
                     <Button color={"primary"} type={"submit"} size={"small"}>Create</Button>
                 </DialogActions>
             </form>
