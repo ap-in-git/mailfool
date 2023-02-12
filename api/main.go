@@ -7,7 +7,7 @@ import (
 )
 
 func InitializeApiRoutes(db *gorm.DB) {
-	//gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(corsMiddleware())
 	err := r.SetTrustedProxies([]string{"127.0.0.1"})

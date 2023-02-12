@@ -1,6 +1,6 @@
-import {restApi} from "../../api";
+import {restApi} from "../../../api";
 import {useEffect, useState} from "react";
-import {Mailbox} from "../types/mailbox";
+import {Mailbox} from "../../types/mailbox";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import CardContent from "@mui/material/CardContent";
@@ -11,9 +11,10 @@ import Avatar from "@mui/material/Avatar";
 import {AiOutlineUser} from "react-icons/ai"
 import {RiLockPasswordLine} from "react-icons/ri"
 import {MdStorage,MdLock} from "react-icons/md"
-import CreateDialog from "../components/mail-box/CreateDialog";
-import useNotificationStore from "../store/notification";
-const MailBox = () => {
+import CreateDialog from "../../components/mail-box/CreateDialog";
+import useNotificationStore from "../../store/notification";
+import {Link} from "react-router-dom";
+const MailboxList = () => {
     const [mailBoxes, setMailBoxes] = useState<Mailbox[]>([]);
     const [dialogOpen,setDialogOpen] = useState(false);
     const {showSuccess,showError} = useNotificationStore((state) =>state)
@@ -42,7 +43,7 @@ const MailBox = () => {
     return (
         <Grid container spacing={4}>
             <Grid item xs={12}>
-                <Button size={"small"} color={"primary"} onClick={()=>{
+                <Button variant={"contained"} size={"small"} color={"primary"} onClick={()=>{
                     setDialogOpen(true)
                 }}>Add new inbox</Button>
                 <CreateDialog dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} fetchMailBox={fetchMailbox}/>
@@ -92,7 +93,9 @@ const MailBox = () => {
                                     </List>
                                 </CardContent>
                                 <CardActions>
-                                    <Button size="small">View Inbox</Button>
+                                    <Link style={{textDecoration:"none"}} to={"/mail-boxes/"+mailBox.id}>
+                                        <Button size="small">View Inbox</Button>
+                                    </Link>
                                     <Button size="small" color={"error"} onClick={()=>{
                                         deleteInbox(mailBox.id)
                                     }}>Delete Inbox</Button>
@@ -106,4 +109,4 @@ const MailBox = () => {
     );
 };
 
-export default MailBox;
+export default MailboxList;

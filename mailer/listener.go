@@ -37,13 +37,6 @@ func ListenMailConnection(mailConfig config.MailConfig, service *service.MailBox
 
 }
 
-type TempAuthService struct {
-}
-
-func (s TempAuthService) IsValidLogin(authCredentials string) bool {
-	return true
-}
-
 func acceptIncomingConnection(ln net.Listener, mailConfig config.MailConfig, service *service.MailBoxService, messageService *service.MailMessageService) {
 	conn, err := ln.Accept()
 	if err != nil {

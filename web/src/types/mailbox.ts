@@ -9,3 +9,14 @@ export interface Mailbox {
     tls_enabled: boolean;
     maximum_size: number;
 }
+
+export interface MailMessage {
+    id: number;
+    created_at: Date;
+    updated_at: Date;
+    sender: string;
+    subject: string;
+    receiver: string;
+    message: string;
+    mail_box_id: number;
+}
