@@ -5,7 +5,6 @@ import (
 	"github.com/ap-in-git/mailfool/db/models"
 	formRequest "github.com/ap-in-git/mailfool/form-request"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type MailBoxService struct {
@@ -28,13 +27,9 @@ func (s *MailBoxService) CreateMailBox(request formRequest.MailBoxFormRequest) e
 	return err
 }
 
-func (s *MailBoxService) IsValidLogin(authCredentials string) *models.MailBox {
-	sp := strings.Split(authCredentials, ":")
-	if len(sp) == 0 {
-		return nil
-	}
+func (s *MailBoxService) IsValidLogin(username string, password string) *models.MailBox {
 	var mailBox models.MailBox
-	err := s.db.Where("user_name = ? and password = ? ", sp[0], sp[1]).Take(&mailBox).Error
+	err := s.db.Where("user_name = ? and password = ? ", username, password).Take(&mailBox).Error
 	if err == nil {
 		return &mailBox
 	}

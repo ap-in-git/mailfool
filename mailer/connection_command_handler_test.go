@@ -34,9 +34,9 @@ func TestConnection_TestHandleExtendedHello(t *testing.T) {
 type FakerService struct {
 }
 
-func (s FakerService) IsValidLogin(authDetails string) *models.MailBox {
+func (s FakerService) IsValidLogin(username, password string) *models.MailBox {
 	st := models.MailBox{}
-	if authDetails == "user:password" {
+	if username == "user" && password == "password" {
 		return &st
 	}
 	return nil

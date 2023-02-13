@@ -6,7 +6,7 @@ import (
 )
 
 type AuthHandler interface {
-	IsValidLogin(authCredentials string) *models.MailBox
+	IsValidLogin(username string, password string) *models.MailBox
 }
 
 type EnvelopeHandler interface {

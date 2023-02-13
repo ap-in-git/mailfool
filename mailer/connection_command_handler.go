@@ -24,8 +24,17 @@ func (c *Connection) handleExtendedHello(sp []string) {
 }
 
 func (c *Connection) handleAuth(cmd []string) {
+	if len(cmd) == 2 && cmd[1] == "LOGIN" {
+		c.handleLoginAuth(cmd)
+		return
+	}
 	if len(cmd) < 3 {
 		c.reply(502, "Invalid number of parameter for auth")
+		return
+	}
+	//If it's authenticated by AUTH LOGIN . Doesn't need to login again
+	if c.MailBox != nil {
+		c.reply(235, "2.7.0 Authentication successful")
 		return
 	}
 	authDecoded, err := base64.StdEncoding.DecodeString(cmd[2])
@@ -39,7 +48,8 @@ func (c *Connection) handleAuth(cmd []string) {
 		c.reply(502, "Username and password should be separated by :")
 		return
 	}
-	mailBox := c.authService.IsValidLogin(authString)
+	sp := strings.Split(authString, ":")
+	mailBox := c.authService.IsValidLogin(sp[0], sp[1])
 	if mailBox == nil {
 		c.reply(535, "Authentication failed")
 		return

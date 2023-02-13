@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"github.com/ap-in-git/mailfool/config"
 	"github.com/ap-in-git/mailfool/db/models"
@@ -60,6 +61,7 @@ func (c *Connection) Serve() {
 	c.sendWelcomeResponse()
 	for {
 		for c.scanner.Scan() {
+			println(c.scanner.Text())
 			c.handleResponse(c.scanner.Text())
 		}
 	}
@@ -75,9 +77,12 @@ func (c *Connection) handleResponse(line string) {
 	case "EHLO":
 		c.handleExtendedHello(sp)
 	case "AUTH":
+		println(line)
 		c.handleAuth(sp)
 	case "MAIL":
 		c.handleMail(sp)
+	case "RSET":
+		c.handleRSET(sp)
 	case "RCPT":
 		c.handleRCPT(sp)
 	case "STARTTLS":
@@ -175,4 +180,38 @@ func (c *Connection) close() {
 	if c.conn != nil {
 		c.conn.Close()
 	}
+}
+
+func (c *Connection) handleRSET(sp []string) {
+	c.reset()
+	c.reply(250, "Go ahead")
+}
+
+func (c *Connection) handleLoginAuth(cmd []string) {
+	//Ask for username
+	c.reply(334, "VXNlcm5hbWU6")
+	username, _ := textproto.NewReader(c.reader).ReadLine()
+	userBytes, err := base64.StdEncoding.DecodeString(username)
+	if err != nil {
+		c.reply(502, "Illegal base64 characters for auth")
+		return
+	}
+	//Ask for password
+	c.reply(334, "UGFzc3dvcmQ6")
+	username = string(userBytes)
+	password, _ := textproto.NewReader(c.reader).ReadLine()
+	passwordBytes, err := base64.StdEncoding.DecodeString(password)
+	if err != nil {
+		c.reply(502, "Illegal base64 characters for auth")
+		return
+	}
+	password = string(passwordBytes)
+	mailBox := c.authService.IsValidLogin(username, password)
+	if mailBox == nil {
+		c.reply(535, "Authentication failed")
+		return
+	}
+	c.MailBox = mailBox
+	c.reply(235, "2.7.0 Authentication successful")
+	return
 }
