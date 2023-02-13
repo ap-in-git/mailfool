@@ -1,33 +1,15 @@
-import React, {useEffect, useState} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import {useParams} from "react-router";
 import {restApi} from "../../../api";
 import {MailMessage} from "../../types/mailbox";
-import {Divider, List, ListItem, ListItemText} from "@mui/material";
+import {Divider, List, ListItem, ListItemText, Tab, Tabs} from "@mui/material";
+import {decodeQuotedPrintable} from "../../utils/quote-printable";
 import Box from "@mui/material/Box";
-import Markdown from "markdown-to-jsx";
-const decodeQuotedPrintable = (data:string):string => {
-    // normalise end-of-line signals
-    data = data.replace(/(\r\n|\n|\r)/g, "\n");
+import TabPanel, {a11yProps} from "../../components/tab/tab-panel";
 
-    // replace equals sign at end-of-line with nothing
-    data = data.replace(/=\n/g, "");
-
-    // encoded text might contain percent signs
-    // decode each section separately
-    let bits = data.split("%");
-    for (let i = 0; i < bits.length; i ++)
-    {
-        // replace equals sign with percent sign
-        bits[i] = bits[i].replace(/=/g, "%");
-
-        // decode the section
-        bits[i] = decodeURIComponent(bits[i]);
-    }
-
-    // join the sections back together
-    return(bits.join("%"));
-}
 const ViewMessage = () => {
+    const [value, setValue] = React.useState(1);
+
     const params = useParams();
     const [mailMessage, setMailMessage] = useState<MailMessage | null>(null);
     useEffect(() => {
@@ -35,6 +17,9 @@ const ViewMessage = () => {
             setMailMessage(res.data)
         })
     }, [params.messageId])
+    const handleChange = (_:any, newValue:number) => {
+        setValue(newValue);
+    };
 
     if (mailMessage == null) {
         return (
@@ -42,7 +27,7 @@ const ViewMessage = () => {
         )
     }
     const generateHtmlContent = () => {
-        console.log(mailMessage.message)
+        let contents:any = {};
         const messageLines = mailMessage.message.split("\n");
         let bodyStartIndex = -1;
         for (let i = 0; i < messageLines.length; i++) {
@@ -53,8 +38,8 @@ const ViewMessage = () => {
             }
         }
         const bodies = messageLines.slice(bodyStartIndex)
+        contents["original"] = decodeQuotedPrintable(bodies.join("\n"))
         let blockStartCharacter = "";
-        let contents:any = {};
         let contentBodies = [];
         let contentType = "";
         let bodyStart = -1;
@@ -88,13 +73,9 @@ const ViewMessage = () => {
                 }
             }
         }
-
-        // const message = messageLines.slice(bodyStartIndex).join("\n")
-        return (
-            <div dangerouslySetInnerHTML={{__html: decodeQuotedPrintable(contents['text/html'])}}>
-            </div>
-        )
+        return contents;
     }
+    const contents = generateHtmlContent();
     return (
         <div>
             <List dense={true}>
@@ -109,9 +90,72 @@ const ViewMessage = () => {
                 </ListItem>
             </List>
             <Divider/>
-            {generateHtmlContent()}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                    <Tab label="HTML" {...a11yProps(0)} />
+                    <Tab label="HTML source" {...a11yProps(1)} />
+                    <Tab label="Plain" {...a11yProps(2)} />
+                    <Tab label="Raw Content" {...a11yProps(3)} />
+                    <Tab label="Headers" {...a11yProps(4)} />
+                </Tabs>
+                <TabPanel value={value} index={0}>
+                    {contents['text/html'] && <div dangerouslySetInnerHTML={{__html:decodeQuotedPrintable(contents['text/html'])}}/>}
+                </TabPanel>
+                <TabPanel index={1} value={value}>
+                    {contents['text/html'] && <div>{
+                        decodeQuotedPrintable(contents['text/html']).split("\n")
+                            .map((item,idx)=>{
+                                    return (
+                                        <Fragment key={idx}>
+                                            {item}<br/>
+                                        </Fragment>
+                                    )
+                                }
+                            )
+                    }</div>}
+                </TabPanel>
+                <TabPanel index={2} value={value}>
+                    {contents['text/plain'] && <div>{
+                        decodeQuotedPrintable(contents['text/plain']).split("\n")
+                            .map((item,idx)=>{
+                                    return (
+                                        <Fragment key={idx}>
+                                            {item}<br/>
+                                        </Fragment>
+                                    )
+                                }
+                            )
+                    }</div>
+                    }
+                </TabPanel>
+                <TabPanel index={3} value={value}>
+                        {
+                            mailMessage.message.split("\n")
+                            .map((item,idx)=>{
+                                    return (
+                                        <Fragment key={idx}>
+                                            {item}<br/>
+                                        </Fragment>
+                                    )
+                                }
+                            )
+                    }
+                </TabPanel>
+                <TabPanel index={4} value={value}>
+                    <List dense={true}>
+                    {
+                        Object.keys(mailMessage.headers).map((value) =>{
+                            return (
+                                <ListItem key={"header"+value}>
+                                    <ListItemText primary={value} secondary={mailMessage?.headers[value]}/>
+                                </ListItem>
+                            )
+                        })
+                    }
+                    </List>
+                </TabPanel>
+            </Box>
         </div>
     );
 };
-
 export default ViewMessage;

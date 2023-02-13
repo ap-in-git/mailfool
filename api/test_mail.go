@@ -28,7 +28,6 @@ func testMail(c *gin.Context) {
 
 		// Settings for SMTP server
 		d := gomail.NewDialer("127.0.0.1", 2525, "username", ":password")
-
 		// This is only needed when SSL/TLS certificate is not valid on server.
 		// In production this should be set to false.
 		d.TLSConfig = &tls.Config{InsecureSkipVerify: true}

@@ -9,10 +9,7 @@ export interface Mailbox {
     tls_enabled: boolean;
     maximum_size: number;
 }
-interface MailMessageHeader {
-    From:string
-    To: string
-}
+
 export interface MailMessage {
     id: number;
     created_at: Date;
@@ -22,5 +19,5 @@ export interface MailMessage {
     receiver: string;
     message: string;
     mail_box_id: number;
-    headers: MailMessageHeader
+    headers: any
 }
